@@ -9,30 +9,16 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   maxZoom: 20
 }).addTo(map);
 
-// Marker cluster
-const markersCluster = L.markerClusterGroup({
-  iconCreateFunction: function(cluster) {
-    // number of child markers
-    const count = cluster.getChildCount();
-
-    // radius scales with number of points
-    const radius = 15 + Math.min(count, 20); // 15 minimum, grows slowly
-
-    // Create a div with no extra styles from leaflet.markercluster CSS
-    return L.divIcon({
-      html: `<svg width="${radius*2}" height="${radius*2}">
-        <circle cx="${radius}" cy="${radius}" r="${radius}" fill="rgba(255,0,0,0.6)" />
-        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="12" fill="white">${count}</text>
-      </svg>`,
-      className: '', // remove default 'marker-cluster' class
-      iconSize: L.point(radius*2, radius*2)
-    });
+// Helper: convert agent category to numeric weight for clusters
+function agentWeight(category) {
+  switch (category?.trim().toLowerCase()) {
+    case "1 or 2": return 1;
+    case "3 to 5": return 4;
+    case "6 to 10": return 8;
+    case "more than 10": return 15;
+    default: return 1;
   }
-});
-
-map.addLayer(markersCluster);
-
-let allMarkers = []; // store all markers with dates
+}
 
 // Helper: size points by reported agent count
 function getMarkerRadius(category) {
@@ -44,6 +30,39 @@ function getMarkerRadius(category) {
     default: return 10;
   }
 }
+
+// Marker cluster with agent-weight scaling
+const markersCluster = L.markerClusterGroup({
+  iconCreateFunction: function(cluster) {
+    // sum weights of all child markers
+    let totalWeight = 0;
+    cluster.getAllChildMarkers().forEach(m => {
+      totalWeight += m.options.agentWeight || 1;
+    });
+
+    // radius scales with total weight
+    const radius = 10 + Math.sqrt(totalWeight) * 3;
+
+    return L.divIcon({
+      html: `<div style="
+        width:${radius*2}px;
+        height:${radius*2}px;
+        background: rgba(255,0,0,0.6);
+        border: 2px solid #000000;
+        border-radius:50%;
+        text-align:center;
+        line-height:${radius*2}px;
+        color:white;
+        font-weight:bold;
+      ">${cluster.getChildCount()}</div>`,
+      className: '',
+      iconSize: L.point(radius*2, radius*2)
+    });
+  }
+});
+map.addLayer(markersCluster);
+
+let allMarkers = []; // store markers with date
 
 // Load and plot data
 async function loadData() {
@@ -62,18 +81,21 @@ async function loadData() {
 
       const dateStr = row["Date of ICE activity"];
       const dateObj = new Date(dateStr);
+
+      const agents = row["Approximate number of ICE agents"];
       const marker = L.circleMarker([lat, lon], {
-        radius: getMarkerRadius(row["Approximate number of ICE agents"]),
+        radius: getMarkerRadius(agents),
         color: "#000000",
         fillColor: "#ff0000",
         fillOpacity: 0.5,
-        weight: 2
+        weight: 2,
+        agentWeight: agentWeight(agents) // attach weight for cluster
       }).bindPopup(`
         <strong>Location:</strong> ${row["Location of ICE activity"]}<br>
         <strong>Borough:</strong> ${row["Borough of ICE activity"]}<br>
         <strong>Date:</strong> ${dateStr}<br>
         <strong>Time:</strong> ${row["Time of ICE activity"]}<br>
-        <strong>Agents:</strong> ${row["Approximate number of ICE agents"]}<br>
+        <strong>Agents:</strong> ${agents}<br>
         <strong>Description:</strong> ${row["Description of ICE activity"]}
       `);
 
@@ -88,18 +110,18 @@ async function loadData() {
   }
 }
 
-// Filter function
+// Filter function (all / last 24h)
 function applyFilter() {
-  const filter = document.querySelector('input[name="timeFilter"]:checked').value;
+  const filter = document.querySelector('input[name="timeFilter"]:checked')?.value || "all";
   markersCluster.clearLayers();
   const now = new Date();
 
   const filtered = allMarkers.filter(item => {
     if (filter === "all") return true;
     if (filter === "24h") {
-      const diff = now - item.date;
-      return diff <= 24*60*60*1000;
+      return (now - item.date) <= 24*60*60*1000;
     }
+    return true;
   });
 
   filtered.forEach(item => markersCluster.addLayer(item.marker));
@@ -110,5 +132,6 @@ document.querySelectorAll('input[name="timeFilter"]').forEach(input => {
   input.addEventListener('change', applyFilter);
 });
 
+// Load data initially and refresh every 2 minutes
 loadData();
-setInterval(loadData, 120000); // refresh every 2 minutes
+setInterval(loadData, 120000);
