@@ -1,17 +1,24 @@
 // URL of your published Google Sheet CSV
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuT8A5dVlZLc7so9ycNYn-rX6kyknKKxz4gSUp5nKrPS5r91fnOb07P4yRzc3WNjJeHVjoMbTZGusK/pub?output=csv";
 
-// Initialize map
-const map = L.map("map").setView([40.7128, -73.94], 10.5);
+// Initialize map with NYC bounds (all boroughs)
+const map = L.map("map");
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
   maxZoom: 20
 }).addTo(map);
 
+// NYC approximate bounding box: SW and NE corners
+const nycBounds = [
+  [40.496115, -74.255591], // SW (Staten Island)
+  [40.915532, -73.700009]  // NE (Bronx)
+];
+map.fitBounds(nycBounds);
+
 // Helper: convert agent category to numeric weight for clusters
 function agentWeight(category) {
-  switch (category?.trim().toLowerCase()) {
+  switch (category?.trim()) {
     case "1 or 2": return 1;
     case "between 3 and 5": return 4;
     case "between 6 and 10": return 8;
@@ -22,7 +29,7 @@ function agentWeight(category) {
 
 // Helper: size points by reported agent count
 function getMarkerRadius(category) {
-  switch (category?.trim().toLowerCase()) {
+  switch (category?.trim()) {
     case "1 or 2": return 8;
     case "between 3 and 5": return 12;
     case "between 6 and 10": return 16;
@@ -34,13 +41,11 @@ function getMarkerRadius(category) {
 // Marker cluster with agent-weight scaling
 const markersCluster = L.markerClusterGroup({
   iconCreateFunction: function(cluster) {
-    // sum weights of all child markers
     let totalWeight = 0;
     cluster.getAllChildMarkers().forEach(m => {
       totalWeight += m.options.agentWeight || 1;
     });
 
-    // radius scales with total weight
     const radius = 10 + Math.sqrt(totalWeight) * 3;
 
     return L.divIcon({
@@ -89,7 +94,7 @@ async function loadData() {
         fillColor: "#ff0000",
         fillOpacity: 0.5,
         weight: 2,
-        agentWeight: agentWeight(agents) // attach weight for cluster
+        agentWeight: agentWeight(agents)
       }).bindPopup(`
         <strong>Location:</strong> ${row["Location of ICE activity"]}<br>
         <strong>Borough:</strong> ${row["Borough of ICE activity"]}<br>
