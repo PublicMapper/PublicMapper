@@ -13,9 +13,9 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 function agentWeight(category) {
   switch (category?.trim().toLowerCase()) {
     case "1 or 2": return 1;
-    case "3 to 5": return 4;
-    case "6 to 10": return 8;
-    case "more than 10": return 15;
+    case "between 3 and 5": return 4;
+    case "between 6 and 10": return 8;
+    case "More than 10": return 15;
     default: return 1;
   }
 }
@@ -24,9 +24,9 @@ function agentWeight(category) {
 function getMarkerRadius(category) {
   switch (category?.trim().toLowerCase()) {
     case "1 or 2": return 8;
-    case "3 to 5": return 12;
-    case "6 to 10": return 16;
-    case "more than 10": return 20;
+    case "between 3 and 5": return 12;
+    case "between 6 and 10": return 16;
+    case "More than 10": return 20;
     default: return 10;
   }
 }
