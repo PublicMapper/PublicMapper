@@ -14,11 +14,13 @@
   <link rel="stylesheet" href="style.css" />
   <style>
     body { margin:0; font-family: sans-serif; }
-    #map { height: 80vh; width: 100%; }
+    #map { height: 70vh; width: 100%; }
     nav { background: #222; color: white; padding: 10px; text-align: center; }
     nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
     nav a:hover { text-decoration: underline; }
     h1 { text-align: center; margin: 10px 0; }
+    #filters { text-align: center; margin: 10px 0; }
+    #filters label { margin: 0 10px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -29,6 +31,12 @@
   </nav>
 
   <h1>ICE Activity in NYC</h1>
+
+  <div id="filters">
+    <label><input type="radio" name="timeFilter" value="all" checked> All Events</label>
+    <label><input type="radio" name="timeFilter" value="24h"> Past 24 Hours</label>
+  </div>
+
   <div id="map"></div>
 
   <!-- Leaflet JS -->

@@ -1,82 +1,103 @@
+// URL of your published Google Sheet CSV
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuT8A5dVlZLc7so9ycNYn-rX6kyknKKxz4gSUp5nKrPS5r91fnOb07P4yRzc3WNjJeHVjoMbTZGusK/pub?output=csv";
 
 // Initialize map
 const map = L.map("map").setView([40.7128, -74.0060], 11);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-  attribution: '&copy; OSM &copy; CARTO',
-  subdomains:'abcd',
-  maxZoom:20
+  attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 20
 }).addTo(map);
 
-// Marker cluster with size scaling
-const markers = L.markerClusterGroup({
-  iconCreateFunction: cluster => {
-    const count = cluster.getChildCount();
-    const size = Math.min(40 + count, 80); // scale size with number of points
+// Marker cluster
+const markersCluster = L.markerClusterGroup({
+  iconCreateFunction: function(cluster) {
     return L.divIcon({
-      html: `<div style="
-        background-color: rgba(255,0,0,0.8);
-        border: 2px solid #000;
-        border-radius: 50%;
-        width: ${size}px;
-        height: ${size}px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-weight:bold;
-        color:#000;
-      ">${count}</div>`,
-      className: 'custom-cluster',
-      iconSize: L.point(size, size)
+      html: `<div style="background: rgba(0,0,0,0.7); border-radius:50%; color:white; text-align:center; line-height:40px; width:40px; height:40px;">${cluster.getChildCount()}</div>`,
+      className: 'marker-cluster',
+      iconSize: L.point(40, 40)
     });
   }
 });
-map.addLayer(markers);
+map.addLayer(markersCluster);
 
-// Marker size by agent count
-function getRadius(agents) {
-  switch (agents?.toLowerCase()) {
-    case "1 or 2": return 10;
-    case "3 to 5": return 14;
-    case "6 to 10": return 18;
-    case "more than 10": return 22;
-    default: return 12;
+let allMarkers = []; // store all markers with dates
+
+// Helper: size points by reported agent count
+function getMarkerRadius(category) {
+  switch (category?.trim().toLowerCase()) {
+    case "1 or 2": return 8;
+    case "3 to 5": return 12;
+    case "6 to 10": return 16;
+    case "more than 10": return 20;
+    default: return 10;
   }
 }
 
 // Load and plot data
 async function loadData() {
-  const res = await fetch(sheetURL);
-  const text = await res.text();
-  const data = Papa.parse(text, {header:true, skipEmptyLines:true}).data;
+  try {
+    const response = await fetch(sheetURL);
+    const rawText = await response.text();
+    const results = Papa.parse(rawText, { header: true, skipEmptyLines: true });
 
-  markers.clearLayers();
+    markersCluster.clearLayers();
+    allMarkers = [];
 
-  data.forEach(row => {
-    const lat = parseFloat(row["Latitude"]);
-    const lon = parseFloat(row["Longitude"]);
-    if (isNaN(lat) || isNaN(lon)) return;
+    results.data.forEach(row => {
+      const lat = parseFloat(row["Latitude"]);
+      const lon = parseFloat(row["Longitude"]);
+      if (isNaN(lat) || isNaN(lon)) return;
 
-    const marker = L.circleMarker([lat, lon], {
-      radius: getRadius(row["Approximate number of ICE agents"]),
-      color: "#000",
-      fillColor: "#f00",
-      fillOpacity: 0.5,
-      weight: 2
+      const dateStr = row["Date of ICE activity"];
+      const dateObj = new Date(dateStr);
+      const marker = L.circleMarker([lat, lon], {
+        radius: getMarkerRadius(row["Approximate number of ICE agents"]),
+        color: "#000000",
+        fillColor: "#ff0000",
+        fillOpacity: 0.5,
+        weight: 2
+      }).bindPopup(`
+        <strong>Location:</strong> ${row["Location of ICE activity"]}<br>
+        <strong>Borough:</strong> ${row["Borough of ICE activity"]}<br>
+        <strong>Date:</strong> ${dateStr}<br>
+        <strong>Time:</strong> ${row["Time of ICE activity"]}<br>
+        <strong>Agents:</strong> ${row["Approximate number of ICE agents"]}<br>
+        <strong>Description:</strong> ${row["Description of ICE activity"]}
+      `);
+
+      allMarkers.push({ marker, date: dateObj });
     });
 
-    marker.bindPopup(`
-      <strong>Location:</strong> ${row["Location of ICE activity"]}<br>
-      <strong>Borough:</strong> ${row["Borough of ICE activity"]}<br>
-      <strong>Date:</strong> ${row["Date of ICE activity"]}<br>
-      <strong>Time:</strong> ${row["Time of ICE activity"]}<br>
-      <strong>Agents:</strong> ${row["Approximate number of ICE agents"]}<br>
-      <strong>Description:</strong> ${row["Description of ICE activity"]}
-    `);
+    applyFilter();
+    console.log("Markers loaded:", allMarkers.length);
 
-    markers.addLayer(marker);
-  });
+  } catch (err) {
+    console.error("Error loading CSV:", err);
+  }
 }
 
+// Filter function
+function applyFilter() {
+  const filter = document.querySelector('input[name="timeFilter"]:checked').value;
+  markersCluster.clearLayers();
+  const now = new Date();
+
+  const filtered = allMarkers.filter(item => {
+    if (filter === "all") return true;
+    if (filter === "24h") {
+      const diff = now - item.date;
+      return diff <= 24*60*60*1000;
+    }
+  });
+
+  filtered.forEach(item => markersCluster.addLayer(item.marker));
+}
+
+// Attach filter events
+document.querySelectorAll('input[name="timeFilter"]').forEach(input => {
+  input.addEventListener('change', applyFilter);
+});
+
 loadData();
-setInterval(loadData, 120000); // refresh every 2 min
+setInterval(loadData, 120000); // refresh every 2 minutes
