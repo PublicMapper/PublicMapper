@@ -3,37 +3,30 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ICE Activity Map (Test)</title>
-
-  <!-- Leaflet CSS -->
+  <title>ICE Activity Map (NYC)</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-
-  <!-- MarkerCluster CSS -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
-
   <link rel="stylesheet" href="style.css" />
-
   <style>
-    body { margin:0; font-family:Arial, sans-serif; }
-    h1 { text-align:center; margin:10px 0; }
+    body { margin:0; font-family: sans-serif; }
     #map { height: 80vh; width: 100%; }
+    nav { background: #222; color: white; padding: 10px; text-align: center; }
+    nav a { color: white; margin: 0 15px; text-decoration: none; font-weight: bold; }
+    nav a:hover { text-decoration: underline; }
+    h1 { text-align: center; margin: 10px 0; }
   </style>
 </head>
 <body>
-  <h1>ICE Activity in NYC (Test Map)</h1>
+  <nav>
+    <a href="https://docs.google.com/forms/d/https://docs.google.com/forms/d/e/1FAIpQLScN6B9P0Y06ofrdw27aNi7uknvCSc778uQrTRiWPzQEi0YY3g/viewform?usp=sharing&ouid=114532477609005327841/viewform" target="_blank">Report ICE Activity</a>
+    <a href="about.html">About the Project</a>
+    <a href="resources.html">Resources</a>
+  </nav>
+
+  <h1>ICE Activity in NYC</h1>
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <!-- PapaParse -->
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
-  <!-- MarkerCluster JS -->
-  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-
-  <!-- Your script -->
   <script src="script.js"></script>
 </body>
 </html>
