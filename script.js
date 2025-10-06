@@ -12,13 +12,24 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 // Marker cluster
 const markersCluster = L.markerClusterGroup({
   iconCreateFunction: function(cluster) {
+    // number of child markers
+    const count = cluster.getChildCount();
+
+    // radius scales with number of points
+    const radius = 15 + Math.min(count, 20); // 15 minimum, grows slowly
+
+    // Create a div with no extra styles from leaflet.markercluster CSS
     return L.divIcon({
-      html: `<div style="background: rgba(255,0,0,0.8); border-radius:50%; color:white; text-align:center; line-height:40px; width:40px; height:40px;">${cluster.getChildCount()}</div>`,
-      className: 'marker-cluster',
-      iconSize: L.point(40, 40)
+      html: `<svg width="${radius*2}" height="${radius*2}">
+        <circle cx="${radius}" cy="${radius}" r="${radius}" fill="rgba(255,0,0,0.6)" />
+        <text x="50%" y="50%" text-anchor="middle" dy=".3em" font-size="12" fill="white">${count}</text>
+      </svg>`,
+      className: '', // remove default 'marker-cluster' class
+      iconSize: L.point(radius*2, radius*2)
     });
   }
 });
+
 map.addLayer(markersCluster);
 
 let allMarkers = []; // store all markers with dates
