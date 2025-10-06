@@ -13,7 +13,7 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
 const markersCluster = L.markerClusterGroup({
   iconCreateFunction: function(cluster) {
     return L.divIcon({
-      html: `<div style="background: rgba(0,0,0,0.7); border-radius:50%; color:white; text-align:center; line-height:40px; width:40px; height:40px;">${cluster.getChildCount()}</div>`,
+      html: `<div style="background: rgba(255,0,0,0.8); border-radius:50%; color:white; text-align:center; line-height:40px; width:40px; height:40px;">${cluster.getChildCount()}</div>`,
       className: 'marker-cluster',
       iconSize: L.point(40, 40)
     });
