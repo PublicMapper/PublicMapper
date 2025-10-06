@@ -2,7 +2,7 @@
 const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTuT8A5dVlZLc7so9ycNYn-rX6kyknKKxz4gSUp5nKrPS5r91fnOb07P4yRzc3WNjJeHVjoMbTZGusK/pub?output=csv";
 
 // Initialize map
-const map = L.map("map").setView([40.7128, -74.0060], 11);
+const map = L.map("map").setView([40.7128, -73.94], 10.5);
 L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
   attribution: '&copy; <a href="https://www.openstreetmap.org/">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
   subdomains: 'abcd',
